@@ -20,6 +20,7 @@ This module is used for creating a job objects for the IBM Q Experience.
 import logging
 from typing import Dict, Optional, Tuple, Any
 import warnings
+from datetime import datetime
 
 from marshmallow import ValidationError
 
@@ -103,14 +104,13 @@ class IBMQJob(BaseModel, BaseJob):
         finished with errors. In that case, ``status()`` will simply return
         ``JobStatus.ERROR`` and you can call ``error_message()`` to get more
         info.
-
     """
 
     def __init__(self,
                  _backend: BaseBackend,
                  api: AccountClient,
                  _job_id: str,
-                 _creation_date: str,
+                 _creation_date: datetime,
                  kind: ApiJobKind,
                  _api_status: ApiJobStatus,
                  **kwargs: Any) -> None:
@@ -140,7 +140,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._job_error_msg = self._error.message if self._error else None
+        self._job_error_msg = None  # type: Optional[str]
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -186,7 +186,8 @@ class IBMQJob(BaseModel, BaseJob):
             self,
             timeout: Optional[float] = None,
             wait: float = 5,
-            partial: bool = False
+            partial: bool = False,
+            refresh: bool = False
     ) -> Result:
         """Return the result of the job.
 
@@ -222,6 +223,8 @@ class IBMQJob(BaseModel, BaseJob):
            timeout: number of seconds to wait for job
            wait: time between queries to IBM Q server
            partial: if true attempts to return partial results for the job.
+           refresh: if true, query the API for the result again.
+               Otherwise return the cached value. Default: False.
 
         Returns:
             Result object.
@@ -243,7 +246,7 @@ class IBMQJob(BaseModel, BaseJob):
                 raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                           'Use job.error_message() to get more details.')
 
-        return self._retrieve_result()
+        return self._retrieve_result(refresh=refresh)
 
     def cancel(self) -> bool:
         """Attempt to cancel a job.
@@ -335,7 +338,8 @@ class IBMQJob(BaseModel, BaseJob):
             if not self._error:
                 self.refresh()
             if self._error:
-                self._job_error_msg = self._error.message
+                self._job_error_msg = self._format_message_from_error(
+                    self._error.__dict__)
             elif self._api_status:
                 # TODO this can be removed once API provides detailed error
                 self._job_error_msg = self._api_status.value
@@ -348,7 +352,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the position in the server queue.
 
         Args:
-            refresh (bool): if True, query the API and return the latest value.
+            refresh: if True, query the API and return the latest value.
                 Otherwise return the cached value.
 
         Returns:
@@ -365,7 +369,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             Job creation date.
         """
-        return self._creation_date
+        return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     def job_id(self) -> str:
         """Return the job ID assigned by the API.
@@ -438,6 +442,12 @@ class IBMQJob(BaseModel, BaseJob):
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 
+    def to_dict(self) -> None:
+        """Serialize the model into a Python dict of simple types."""
+        warnings.warn("IBMQJob.to_dict() is not supported and may not work properly.",
+                      stacklevel=2)
+        return BaseModel.to_dict(self)
+
     def _wait_for_completion(
             self,
             timeout: Optional[float] = None,
@@ -476,8 +486,12 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._status in required_status
 
-    def _retrieve_result(self) -> Result:
+    def _retrieve_result(self, refresh: bool = False) -> Result:
         """Retrieve the job result response.
+
+        Args:
+            refresh: if true, query the API for the result again.
+               Otherwise return the cached value. Default: False.
 
         Returns:
             The job result.
@@ -489,7 +503,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         result_response = None
-        if not self._result:  # type: ignore[has-type]
+        if not self._result or refresh:  # type: ignore[has-type]
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
@@ -519,4 +533,22 @@ class IBMQJob(BaseModel, BaseJob):
             # If individual errors given
             self._job_error_msg = build_error_report(result_response['results'])
         elif 'error' in result_response:
-            self._job_error_msg = result_response['error']['message']
+            self._job_error_msg = self._format_message_from_error(result_response['error'])
+
+    def _format_message_from_error(self, error: Dict) -> str:
+        """Format message from the error field.
+
+        Args:
+            The error field.
+
+        Returns:
+            A formatted error message.
+
+        Raises:
+            IBMQJobApiError: If there was some unexpected failure in the server.
+        """
+        try:
+            return "{}. Error code: {}.".format(error['message'], error['code'])
+        except KeyError:
+            raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
+                                  .format(error))

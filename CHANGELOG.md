@@ -23,6 +23,47 @@ The format is based on [Keep a Changelog].
 
 ### Added
 
+- `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
+  `refresh=True` is specified, the function re-queries the api for the 
+  results, rather than returning those cached. (\#469)
+
+## [0.4.3] - 2019-11-21
+
+### Fixed
+
+- Fixed an issue where `IBMQJob.error_message()` may raise an exception
+  if the job fails before execution. (\#458)
+
+## [0.4.2] - 2019-11-18
+
+### Fixed
+
+- Fixed `IBMQBackendService.jobs()` to correctly return jobs when
+  both `start_datetime` and `end_datetime` are specified. Now, when the 
+  two parameters are specified, the function will return the jobs after 
+  (greater than or equal to) and before (less than or equal to) the 
+  two given datetimes. (\#452)
+
+## [0.4.1] - 2019-11-14
+
+### Fixed
+
+- Fixed `job.creation_date()` return string format to be the same as that of 
+  release 0.3. (\#447)
+
+### Changed
+
+- `IBMBackend.jobs()` and `IBMQBackendService.jobs()` now accept the 
+  optional parameters `start_datetime` and `end_datetime`. If one is 
+  specified, it is used to find jobs whose creation date is after 
+  (greater than) or before (less than) the given the date/time, 
+  respectively. If both are specified, they are used to find jobs 
+  whose creation date is between the two dates. (\#443)
+
+## [0.4.0] - 2019-11-12
+
+### Added
+
 - A new `IBMQJobManager` class that takes a list of circuits or pulse schedules
   as input, splits them into one or more jobs, and submits the jobs.
   (\#389, \#400, \#407)
@@ -219,7 +260,11 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...HEAD
+[0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3
+[0.4.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...0.4.2
+[0.4.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.0...0.4.1
+[0.4.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...0.4.0
 [0.3.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.0...0.3.1
