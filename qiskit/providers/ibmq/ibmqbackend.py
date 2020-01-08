@@ -86,11 +86,13 @@ class IBMQBackend(BaseBackend):
             job_share_level: allows sharing a job at the hub/group/project and
                 global level. The possible job share levels are: "global", "hub",
                 "group", "project", and "none".
+
                     * global: the job is public to any user.
                     * hub: the job is shared between the users in the same hub.
                     * group: the job is shared between the users in the same group.
                     * project: the job is shared between the users in the same project.
                     * none: the job is not shared at any level.
+
                 If the job share level is not specified, then the job is not shared at any level.
 
         Returns:
@@ -273,8 +275,8 @@ class IBMQBackend(BaseBackend):
                 `'RUNNING'`
             job_name: filter by job name. The `job_name` is matched partially
                 and `regular expressions
-                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
-                `_ can be used.
+                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
+                can be used.
             start_datetime: filter by start date. This is used to find jobs
                 whose creation dates are after (greater than or equal to) this date/time.
             end_datetime: filter by end date. This is used to find jobs
@@ -288,13 +290,10 @@ class IBMQBackend(BaseBackend):
 
                    job_list = backend.jobs(limit=5, status=JobStatus.ERROR)
 
-                Filter last five jobs with counts=1024, and counts for
-                states ``00`` and ``11`` each exceeding 400::
+                Filter last five jobs with hub name ``ibm-q``::
 
-                  cnts_filter = {'shots': 1024,
-                                 'qasms.result.data.counts.00': {'gt': 400},
-                                 'qasms.result.data.counts.11': {'gt': 400}}
-                  job_list = backend.jobs(limit=5, db_filter=cnts_filter)
+                  filter = {'hubInfo.hub.name': 'ibm-q'}
+                  job_list = backend.jobs(limit=5, db_filter=filter)
 
         Returns:
             list of IBMQJob instances

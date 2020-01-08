@@ -13,19 +13,33 @@ The format is based on [Keep a Changelog].
 > - **Fixed**: for any bug fixes.
 > - **Security**: in case of vulnerabilities.
 
-## [0.3.2] - 2019-08-20
-### Changed
 
-- Pin version of nest\_asyncio requirement
+## [0.4.5] - 2019-12-18
 
+### Added
 
-## [UNRELEASED]
+- `IBMQJob` now has a new `queue_info()` method that returns queue 
+  information, such as queue position, estimated start/end time, and 
+  priority levels for the job. (\#467)  
+- Python 3.8 is now supported in qiskit-ibmq-provider. (\#445)
+
+## [0.4.4] - 2019-12-09
 
 ### Added
 
 - `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
   `refresh=True` is specified, the function re-queries the api for the 
   results, rather than returning those cached. (\#469)
+- `POST` network request are now retried if the status code is among specific
+  safe codes. In the case of the request failing during job submission, more
+  information is now displayed in the `INFO` and `DEBUG` log levels. (\#475)
+
+### Deprecated
+
+- Python 3.5 support in qiskit-ibmq-provider is deprecated. Support will be
+  removed on the upstream python community's end of life date for the version,
+  which is 09/13/2020.  (\#445)
+  
 
 ## [0.4.3] - 2019-11-21
 
@@ -260,7 +274,9 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...HEAD
+[0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
+[0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.0...0.4.1
